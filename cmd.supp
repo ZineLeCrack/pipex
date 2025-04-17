@@ -1,0 +1,7 @@
+{
+	std
+	Memcheck:Leak
+	match-leak-kinds: all
+	...
+	obj:*/usr/bin/*
+}

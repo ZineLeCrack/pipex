@@ -6,97 +6,99 @@
 /*   By: rlebaill <rlebaill@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/27 15:38:51 by rlebaill          #+#    #+#             */
-/*   Updated: 2024/11/28 14:15:47 by rlebaill         ###   ########.fr       */
+/*   Updated: 2025/04/17 10:05:16 by rlebaill         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-static void	free_cmd(char **cmd)
+static void	write_in_pipe(t_pipex *data)
 {
-	int	i;
+	char	**cmd;
+	char	*path;
 
-	i = 0;
-	while (cmd[i] != NULL)
+	dup2(data->infile, STDIN_FILENO);
+	dup2(data->pipe_fd[1], STDOUT_FILENO);
+	close_all(data);
+	cmd = ft_split(data->av[2], ' ');
+	if (!cmd)
 	{
-		free(cmd[i]);
-		i++;
+		ft_putstr_fd("malloc failed\n", 2);
+		exit(1);
 	}
-	free(cmd);
-}
-
-static void	close_all(int files[2], int fd[2])
-{
-	close(fd[0]);
-	close(fd[1]);
-	close(files[0]);
-	close(files[1]);
-}
-
-static void	write_in_pipe(int files[2], int fd[2], char **argv, char **envp)
-{
-	char	**cmd1;
-	char	*path;
-
-	dup2(files[0], STDIN_FILENO);
-	dup2(fd[1], STDOUT_FILENO);
-	close(fd[0]);
-	close(fd[1]);
-	close(files[0]);
-	close(files[1]);
-	cmd1 = ft_split(argv[2], ' ');
-	path = ft_strjoin("/bin/", cmd1[0]);
-	execve(path, cmd1, envp);
-	write(2, "Execve failed for cmd1\n", 23);
-	free_cmd(cmd1);
+	path = ft_find_path(data, cmd[0]);
+	if (!path)
+	{
+		free_split(cmd);
+		exit(1);
+	}
+	execve(path, cmd, data->env);
+	ft_putstr_fd("command not found\n", 2);
+	free_split(cmd);
 	free(path);
 	exit(1);
 }
 
-static void	write_in_file(int files[2], int fd[2], char **argv, char **envp)
+static void	write_in_file(t_pipex *data)
 {
-	char	**cmd2;
+	char	**cmd;
 	char	*path;
 
-	dup2(fd[0], STDIN_FILENO);
-	dup2(files[1], STDOUT_FILENO);
-	close(fd[1]);
-	close(fd[0]);
-	close(files[0]);
-	close(files[1]);
-	cmd2 = ft_split(argv[3], ' ');
-	path = ft_strjoin("/bin/", cmd2[0]);
-	execve(path, cmd2, envp);
-	write(2, "Execve failed for cmd2\n", 23);
-	free_cmd(cmd2);
+	dup2(data->pipe_fd[0], STDIN_FILENO);
+	dup2(data->outfile, STDOUT_FILENO);
+	close_all(data);
+	cmd = ft_split(data->av[3], ' ');
+	if (!cmd)
+	{
+		ft_putstr_fd("malloc failed\n", 2);
+		exit(1);
+	}
+	path = ft_find_path(data, cmd[0]);
+	if (!path)
+	{
+		free_split(cmd);
+		exit(1);
+	}
+	execve(path, cmd, data->env);
+	ft_putstr_fd("command not found\n", 2);
+	free_split(cmd);
 	free(path);
 	exit(1);
+}
+
+static int	init_data(t_pipex *data, char **argv, char **envp)
+{
+	data->av = argv;
+	data->env = envp;
+	data->infile = open(argv[1], O_RDONLY);
+	if (data->infile == -1)
+		return (ft_putstr_fd("failed to open infile\n", 2), 1);
+	data->outfile = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (data->outfile == -1)
+		return (ft_putstr_fd("failed to open outfile\n", 2),
+			close(data->infile), 1);
+	return (0);
 }
 
 int	main(int argc, char **argv, char **envp)
 {
-	int		files[2];
-	int		fd[2];
+	t_pipex	data;
 	pid_t	pid;
 
 	if (argc != 5)
-		return (write(2, "Usage: ./pipex infile cmd1 cmd2 outfile\n", 40), 1);
-	if (pipe(fd) == -1)
-		return (write(2, "pipe error\n", 11), 1);
+		return (ft_putstr_fd("usage: ./pipex infile cmd cmd outfile\n", 2), 1);
+	if (init_data(&data, argv, envp))
+		return (1);
+	if (pipe(data.pipe_fd) == -1)
+		return (ft_putstr_fd("pipe error\n", 2), 1);
 	pid = fork();
 	if (pid == -1)
-		return (write(2, "fork error\n", 11), 1);
-	files[0] = open(argv[1], O_RDONLY);
-	if (files[0] == -1)
-		return (write(1, "failed open file\n", 17), 1);
-	files[1] = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
-	if (files[1] == -1)
-		return (write(1, "failed open file\n", 17), 1);
+		return (ft_putstr_fd("fork error\n", 2), 1);
 	if (pid == 0)
-		write_in_pipe(files, fd, argv, envp);
+		write_in_pipe(&data);
 	if (fork() == 0)
-		write_in_file(files, fd, argv, envp);
-	close_all(files, fd);
+		write_in_file(&data);
+	close_all(&data);
 	wait(NULL);
 	wait(NULL);
 	return (0);

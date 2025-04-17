@@ -13,7 +13,7 @@ SRCS = srcs/ft_printf/ft_printf.c srcs/ft_printf/ft_putchar.c srcs/ft_printf/ft_
 	   srcs/libft/ft_strnstr.c srcs/libft/ft_strrchr.c srcs/libft/ft_strtrim.c srcs/libft/ft_substr.c srcs/libft/ft_tolower.c srcs/libft/ft_toupper.c \
 	   srcs/libft/ft_lstnew_bonus.c srcs/libft/ft_lstadd_front_bonus.c srcs/libft/ft_lstsize_bonus.c srcs/libft/ft_lstlast_bonus.c \
 	   srcs/libft/ft_lstadd_back_bonus.c srcs/libft/ft_lstdelone_bonus.c srcs/libft/ft_lstclear_bonus.c srcs/libft/ft_lstiter_bonus.c srcs/libft/ft_lstmap_bonus.c \
-	   srcs/libft/get_next_line_utils.c srcs/libft/get_next_line.c srcs/main.c
+	   srcs/libft/get_next_line_utils.c srcs/libft/get_next_line.c srcs/utils.c srcs/find_path.c srcs/main.c
 
 OBJS = $(SRCS:.c=.o)
 
