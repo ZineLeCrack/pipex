@@ -6,7 +6,7 @@
 /*   By: rlebaill <rlebaill@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/27 15:38:51 by rlebaill          #+#    #+#             */
-/*   Updated: 2025/04/17 10:05:16 by rlebaill         ###   ########.fr       */
+/*   Updated: 2025/04/18 09:07:00 by rlebaill         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,10 @@ int	main(int argc, char **argv, char **envp)
 		return (ft_putstr_fd("fork error\n", 2), 1);
 	if (pid == 0)
 		write_in_pipe(&data);
-	if (fork() == 0)
+	pid = fork();
+	if (pid == -1)
+		return (ft_putstr_fd("fork error\n", 2), 1);
+	if (pid == 0)
 		write_in_file(&data);
 	close_all(&data);
 	wait(NULL);
